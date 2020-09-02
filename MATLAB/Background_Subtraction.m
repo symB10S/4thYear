@@ -1,6 +1,6 @@
-Vid = VideoReader("Sample_Video/test_mouse.mov");
+Vid = VideoReader("Sample_Video/test_only_orange.mov");
 scale_factor = 0.1;
-background_threshold = 150;
+background_threshold = 80;
 
 vid_writer = VideoWriter('Output/test.mp4','MPEG-4');
 open(vid_writer);
