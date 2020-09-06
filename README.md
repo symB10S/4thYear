@@ -3,7 +3,8 @@ Repository for The Electrical/Information Engineering Laboratory Project.
 
 Description - An economically practical modular monocular analytic traffic monitoring system with a specific application demonstrated to provide intelligent hazard indication for approaching blind spots such as a sharp bend.
 
-Jonathan Meerholz - 1430922
+Jonathan Meerholz - 1430922,
+
 Mihir Vanmali - 1408120
 
 University of Witwatersrand,
