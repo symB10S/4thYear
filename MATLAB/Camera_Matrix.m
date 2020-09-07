@@ -1,8 +1,11 @@
-f_x = 1000;
-f_y = 1000;
-p_x = 600;
-p_y = 600;
+f_x = 1440.91263340420;
+f_y = 1441.50861351267;
+p_x = 823.957545887656;
+p_y = 568.296028574054;
 s = 0;
+
+image_width = 1600;
+image_height = 1200;
 
 K = [f_x s p_x;0 f_y p_y;0 0 1];
 K_inv = [f_y 0 (-p_x*f_y);0 f_x (-p_y*f_x);0 0 (f_x*f_y)]*1/((f_x).*(f_y));
@@ -49,7 +52,7 @@ end
 
 figure(1)
 plot(out(1,:)./out(3,:),out(2,:)./out(3,:))
-axis([0 1200 0 1200])
+axis([0 image_width 0 image_height])
 
 %=== DEFINE A ROAD ===%
 W = 1 ;
@@ -71,12 +74,12 @@ end
 
 figure(2)
 plot(out(1,:)./out(3,:),out(2,:)./out(3,:))
-axis([0 1200 0 1200])
+axis([0 image_width 0 image_height])
 
 
 %=== DEFINE ZIG-ZAG ROAD ===%
 W = 1 ;
-D = 2 ;
+D = 2 ;1200
 H = 2 ;
 S = 0.2;
 number_zigs = 20;
@@ -100,7 +103,7 @@ end
 
 figure(3)
 plot(out(1,:)./out(3,:),out(2,:)./out(3,:))
-axis([0 1200 0 1200])
+axis([0 image_width 0 image_height])
 
 
 % === INVERSE CAMERA MATRIX === %
