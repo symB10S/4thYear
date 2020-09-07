@@ -14,23 +14,27 @@ K_inv = [f_y 0 (-p_x*f_y);0 f_x (-p_y*f_x);0 0 (f_x*f_y)]*1/((f_x).*(f_y));
 theta = 0;
 R = [1 0 0; 0 cos(theta) sin(theta); 0 -sin(theta) cos(theta)];
 
-%=== DEFINE A CUBE ===%
-L = 1;
-H = 1;
-D = 4;
+%=== DEFINE A RECTANGLE ===%
 
-delta_x = L/2;
-delta_y = -H/2;
+W = 115;    %Width
+L = 55;     %Lenght
+T = 173;    %Tallness
+
+H = 250;    %Camera Height
+D = 450;    %Distance from Camera
+
+delta_x = -W/2;
+delta_y = -H;
 delta_z = 0;
 
-p_1 = [0;L;D]+[delta_x;delta_y;delta_z];
-p_2 = [L;L;D]+[delta_x;delta_y;delta_z];
-p_3 = [L;0;D]+[delta_x;delta_y;delta_z];
+p_1 = [0;T;D]+[delta_x;delta_y;delta_z];
+p_2 = [W;T;D]+[delta_x;delta_y;delta_z];
+p_3 = [W;0;D]+[delta_x;delta_y;delta_z];
 p_4 = [0;0;D]+[delta_x;delta_y;delta_z];
-p_5 = p_1 + [0;0;H];
-p_6 = p_2 + [0;0;H];
-p_7 = p_3 + [0;0;H];
-p_8 = p_4 + [0;0;H];
+p_5 = p_1 + [0;0;L];
+p_6 = p_2 + [0;0;L];
+p_7 = p_3 + [0;0;L];
+p_8 = p_4 + [0;0;L];
 
 %Transform Points Individually 3D -> 2D
 P_1 = K*p_1;
