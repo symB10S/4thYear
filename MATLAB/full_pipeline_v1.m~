@@ -1,8 +1,15 @@
+location_x = [];
+location_y = [];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Setup Camera Transformation %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 f_x = 2008.8053  ;
 f_y = 2008.8053 ;
 p_x = 960.0000;
 p_y = 540.0000 ;
 s = 0;
+H = 2.5;
 
 image_width = 1920;
 image_height = 1080;
@@ -10,14 +17,35 @@ image_height = 1080;
 K = [f_x s p_x;0 f_y p_y;0 0 1];
 K_inv = [f_y 0 (-p_x*f_y);0 f_x (-p_y*f_x);0 0 (f_x*f_y)]*1/((f_x).*(f_y));
 
-video_path = "OneVehicle/Rendered Animation/onevehiclerender.mkv";
+% Generate Perspective for lower than Horizon
+image_to_distance_x= [];
+image_to_distance_y= [];
+image_to_distance_z= [];
 
+for i = 1:image_height/2-100
+    for j = 1:image_width
+        p_in = [j;i;1];
+        
+        rates = K_inv*p_in;
+        parameter = -H/rates(2);
+        p_out = rates*parameter;
+        
+        image_to_distance_x(i,j) = p_out(1);
+        image_to_distance_y(i,j) = p_out(2);
+        image_to_distance_z(i,j) = p_out(3);
+    end
+end
+
+video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 Vid = VideoReader(video_path);
-scale_factor = 0.5;
+
+scale_factor = 0.7;
 max_width = scale_factor*image_width/10;
+max_area = image_width*image_height*scale_factor*scale_factor/500;
+
 background_threshold =  10;
 
-vid_writer = VideoWriter('Output/original_0p1');
+vid_writer = VideoWriter('Output/original_0p1.mp4','MPEG-4');
 open(vid_writer);
 
 %background = readFrame(Vid);
@@ -38,23 +66,54 @@ while hasFrame(Vid)
     Diff(Diff < background_threshold) = 0;
     Diff(Diff >= background_threshold) = 1;
     
-    %Diff = bwareaopen(Diff, 50);
-    Diff = imclose(Diff,se);
+    Diff = imclose(Diff,se); % close image --> imfill(Diff,'holes')
+    Diff = imerode(Diff,se); % erode small pixels
+    % imerode second does the job better, however imclose might
+    % be more efficient on after erode due to less pixels ?
+    % 
+    % Need to see if combining morphological is possible
     
-    cc = bwconncomp(Diff,4);
+    
+    cc = bwconncomp(Diff,4); % find connected pixels
+    
+    % Filter small objects - Instead of Erode
+    
+    %numPixels = cellfun(@numel,cc.PixelIdxList);
+    %for index = find(numPixels < max_area)
+    %    Diff(cc.PixelIdxList{index}) = 0;
+    %end
+    
+    %cc = bwconncomp(Diff,4);
+    
+    %S = regionprops(cc, 'Area'); % label the area 
     %labeled = labelmatrix(cc);
+    
     
     %Feret Parameters
     [out,LM] = bwferet(cc,'MaxFeretProperties'); % Get Feret Properies
     maxLabel = max(LM(:)); % Find max label
     
-    Objects = zeros(3,maxLabel);
+    Objects = zeros(5,maxLabel);
         
     for labelvalues = 1:maxLabel
-        out.MaxDiameter(labelvalues);
+        %out.MaxDiameter(labelvalues)
+        x1 = 1 + floor(out.MaxCoordinates{labelvalues}(1,1)/scale_factor);
+        x2 = 1 + floor(out.MaxCoordinates{labelvalues}(2,1)/scale_factor);
+        y = 1 + 1080 -  floor(max(out.MaxCoordinates{labelvalues}(1,2),out.MaxCoordinates{labelvalues}(2,2))/scale_factor);
+        
+        Objects(1,labelvalues) = image_to_distance_x(y,x1);
+        Objects(2,labelvalues) = image_to_distance_z(y,x1);
+        Objects(3,labelvalues) = image_to_distance_x(y,x2);
+        Objects(4,labelvalues) = image_to_distance_z(y,x2);
+        Objects(5,labelvalues) = labelvalues;
+        
+        %Objects(1,labelvalues) = out.MaxCoordinates{labelvalues}(1,1)
+        
         Diff = insertShape(Diff,'Line',[out.MaxCoordinates{labelvalues}(1,1) out.MaxCoordinates{labelvalues}(1,2) out.MaxCoordinates{labelvalues}(2,1) out.MaxCoordinates{labelvalues}(2,2)],'LineWidth',5,'Color','green');
-        %Diff = insertShape(Diff,'Line',[out.MinCoordinates{labelvalues}(1,1) out.MinCoordinates{labelvalues}(1,2) out.MinCoordinates{labelvalues}(2,1) out.MinCoordinates{labelvalues}(2,2)],'LineWidth',5);
+    
     end
+    
+    Objects
     
     writeVideo(vid_writer,Diff);
     counter = counter + 1;
