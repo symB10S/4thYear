@@ -136,6 +136,7 @@ blank_image = zeros(image_height,image_width,3,'uint8');
 blank_image_x= [];
 blank_image_y= [];
 blank_image_z= [];
+blank_image_abs= [];
 
 for i = 1:image_height/2-100
     for j = 1:image_width
@@ -148,6 +149,8 @@ for i = 1:image_height/2-100
         blank_image_x(i,j) = p_out(1);
         blank_image_y(i,j) = p_out(2);
         blank_image_z(i,j) = p_out(3);
+        
+        blank_image_abs(i,j)= sqrt(p_out(1)*p_out(1)+p_out(2)*p_out(2)+p_out(3)*p_out(3));
         %image(round(p_out(1)),round(p_out(3)),:) = image_flipped(i,j,:);
     end
 end
@@ -164,6 +167,9 @@ figure(6)
 h = surf(blank_image_z)
 set(h,'LineStyle','none')
 
+figure(7)
+h = surf(blank_image_abs)
+set(h,'LineStyle','none')
         
 
 

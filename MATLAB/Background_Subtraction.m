@@ -4,7 +4,7 @@ Vid = VideoReader(video_path);
 scale_factor = 0.1;
 background_threshold =  10;
 
-vid_writer = VideoWriter('Output/test');
+vid_writer = VideoWriter('Output/original_0p1');
 open(vid_writer);
 
 %background = readFrame(Vid);
@@ -18,6 +18,7 @@ se = strel('disk',10);
 counter = 1;
 
 while hasFrame(Vid)
+    tic
     frame = readFrame(Vid); % Read Frame
     half = imresize(frame,scale_factor); % Half Frame Size
     
@@ -26,6 +27,10 @@ while hasFrame(Vid)
     Diff(Diff >= background_threshold) = 1;
     
     %Diff = imclose(Diff,se);
+    cc = bwconncomp(Diff,4);
+    labeled = labelmatrix(cc);
+    toc
+    
     
     writeVideo(vid_writer,Diff);
     counter = counter + 1;
