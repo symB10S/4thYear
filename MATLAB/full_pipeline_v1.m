@@ -11,6 +11,9 @@ p_y = 540.0000 ;
 s = 0;
 H = 2.5;
 
+max_objects = 10; % Maximum trackable objects
+max_distance = 5; % Maximum distance threshold
+
 image_width = 1920;
 image_height = 1080;
 
@@ -36,6 +39,10 @@ for i = 1:image_height/2-100
     end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Setup Video Reader Writer  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
 video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
@@ -47,7 +54,8 @@ max_area = image_width*image_height*scale_factor*scale_factor/500;
 
 background_threshold =  10;
 
-vid_writer = VideoWriter('Output/original_0p1.mp4','MPEG-4');
+%vid_writer = VideoWriter('Output/original_0p1.mp4','MPEG-4'); % Mac
+vid_writer = VideoWriter('Output/original_0p1.mp4');% Linux
 open(vid_writer);
 
 %background = readFrame(Vid);
@@ -56,6 +64,16 @@ half_back = imresize(background,scale_factor);
 half_back_gray = double(rgb2gray(half_back));
 
 se = strel('disk',10);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% Define runtime Arrays %
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+old_Objects = zeros(5, max_objects);
+Objects = zeros(5, max_objects);
+spacing = zeros(max_objects,max_objects);
+
+max_label = 0;
 
 % Step through Video Frames
 counter = 1;
@@ -90,37 +108,62 @@ while hasFrame(Vid)
     %S = regionprops(cc, 'Area'); % label the area 
     %labeled = labelmatrix(cc);
     
+    % Save data from previous frame
+    old_max_label = max_label;
+    old_Objects = Objects;  
+    spacing = NaN(max_objects,max_objects);
+    %Objects = zeros(5,maxLabel);    
     
     %Feret Parameters
     [out,LM] = bwferet(cc,'MaxFeretProperties'); % Get Feret Properies
-    maxLabel = max(LM(:)); % Find max label
-    
-    Objects = zeros(5,maxLabel);
+    max_label = max(LM(:)); % Find max label
         
-    for labelvalues = 1:maxLabel
+    for label_value = 1:max_label
         %out.MaxDiameter(labelvalues)
-        x1 = 1 + floor(out.MaxCoordinates{labelvalues}(1,1)/scale_factor);
-        x2 = 1 + floor(out.MaxCoordinates{labelvalues}(2,1)/scale_factor);
-        y = 1 + 1080 -  floor(max(out.MaxCoordinates{labelvalues}(1,2),out.MaxCoordinates{labelvalues}(2,2))/scale_factor);
+        x1 = 1 + floor(out.MaxCoordinates{label_value}(1,1)/scale_factor);
+        x2 = 1 + floor(out.MaxCoordinates{label_value}(2,1)/scale_factor);
+        y = 1 + 1080 -  floor(max(out.MaxCoordinates{label_value}(1,2),out.MaxCoordinates{label_value}(2,2))/scale_factor);
         
         if(x1>1920) x1 = 1920; end
         if(x2>1920) x2 = 1920; end
         if(y>440) y = 440; end
         
-        Objects(1,labelvalues) = image_to_distance_x(y,x1);
-        Objects(2,labelvalues) = image_to_distance_z(y,x1);
-        Objects(3,labelvalues) = image_to_distance_x(y,x2);
-        Objects(4,labelvalues) = image_to_distance_z(y,x2);
-        Objects(5,labelvalues) = labelvalues;
+        X_1 = image_to_distance_x(y,x1);
+        X_2 = image_to_distance_x(y,x2);
+        Y = image_to_distance_z(y,x1);
         
-        %Objects(1,labelvalues) = out.MaxCoordinates{labelvalues}(1,1)
+        Objects(1,label_value) = (X_1 + X_2)/2;     % Center x value
+        Objects(2,label_value) = Y;                 % Z distance away
+        Objects(3,label_value) = abs(X_1 - X_2);    % Width of car
         
-        Diff = insertShape(Diff,'Line',[out.MaxCoordinates{labelvalues}(1,1) out.MaxCoordinates{labelvalues}(1,2) out.MaxCoordinates{labelvalues}(2,1) out.MaxCoordinates{labelvalues}(2,2)],'LineWidth',5,'Color','green');
-        location_x = [location_x (Objects(1,labelvalues)+Objects(3,labelvalues))/2];
-        location_y = [location_y Objects(4,labelvalues)];
+        
+        
+        for old_object = 1: old_max_label
+            %spacing(label_value, old_object) = (Objects(1,label_value)-old_Objects(1,old_object))^2 + (Objects(2,label_value)-old_Objects(2,old_object))^2;
+            spacing(label_value, old_object) = (Objects(2,label_value)-old_Objects(2,old_object)); % Z Velocity only
+        
+        end
+        
+        Diff = insertShape(Diff,'Line',[out.MaxCoordinates{label_value}(1,1) out.MaxCoordinates{label_value}(1,2) out.MaxCoordinates{label_value}(2,1) out.MaxCoordinates{label_value}(2,2)],'LineWidth',5,'Color','green');
+        location_x = [location_x (Objects(1,label_value)+Objects(3,label_value))/2];
+        location_y = [location_y Objects(4,label_value)];
     end
     
-    Objects
+    Objects(:,max_label+1:max_objects) = 0; % Clear Previous Labelled
+    
+    for label_value = 1:max_label
+        [Objects(5,label_value),Objects(4,label_value)] = min(abs(spacing(label_value,:)));
+        
+        if Objects(5,label_value) > max_distance 
+            Objects(4,label_value) = 0;
+            Objects(5,label_value) = 0;
+        else
+            Objects(5,label_value) = spacing(label_value,Objects(4,label_value));
+        end
+    end
+    
+    %spacing
+    %Objects
     
     writeVideo(vid_writer,Diff);
     counter = counter + 1;
