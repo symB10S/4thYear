@@ -1,6 +1,3 @@
-location_x = [];
-location_y = [];
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup Camera Transformation %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -43,14 +40,14 @@ end
 %  Setup Video Reader Writer  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
+video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
-video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
+%video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
 Vid = VideoReader(video_path);
 
-scale_factor = 0.7;
-max_width = scale_factor*image_width/10;
-max_area = image_width*image_height*scale_factor*scale_factor/500;
+scale_factor  = 1;
+minimum_width = 0.5; % Minimum width in meters
+max_area      = image_width * image_height * scale_factor * scale_factor/500;
 
 background_threshold =  10;
 
@@ -63,11 +60,17 @@ background = imread("OneVehicle/Background Image/0235.png");
 half_back = imresize(background,scale_factor);
 half_back_gray = double(rgb2gray(half_back));
 
-se = strel('disk',10);
+se = strel('disk',5);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % Define runtime Arrays %
 %%%%%%%%%%%%%%%%%%%%%%%%%
+
+location_x = [];
+location_y = [];
+
+location_x_2 = [];
+location_y_2 = [];
 
 old_Objects = zeros(5, max_objects);
 Objects = zeros(5, max_objects);
@@ -117,56 +120,104 @@ while hasFrame(Vid)
     %Feret Parameters
     [out,LM] = bwferet(cc,'MaxFeretProperties'); % Get Feret Properies
     max_label = max(LM(:)); % Find max label
-        
+    
+    number_removed_objects = 0 ; 
+    
     for label_value = 1:max_label
-        %out.MaxDiameter(labelvalues)
+        
+        label_value = label_value - number_removed_objects; % Adjust for removed objects
+        
         x1 = 1 + floor(out.MaxCoordinates{label_value}(1,1)/scale_factor);
         x2 = 1 + floor(out.MaxCoordinates{label_value}(2,1)/scale_factor);
-        y = 1 + 1080 -  floor(max(out.MaxCoordinates{label_value}(1,2),out.MaxCoordinates{label_value}(2,2))/scale_factor);
+        y  = 1 + 1080 -  floor(max(out.MaxCoordinates{label_value}(1,2),out.MaxCoordinates{label_value}(2,2))/scale_factor);
         
         if(x1>1920) x1 = 1920; end
         if(x2>1920) x2 = 1920; end
-        if(y>440) y = 440; end
+        if(y>440)   y  =  440; end
         
-        X_1 = image_to_distance_x(y,x1);
-        X_2 = image_to_distance_x(y,x2);
-        Y = image_to_distance_z(y,x1);
+        X_1   = image_to_distance_x(y,x1);
+        X_2   = image_to_distance_x(y,x2);
+        Y     = image_to_distance_z(y,x1);
+        Width = abs(X_1 - X_2);
         
-        Objects(1,label_value) = (X_1 + X_2)/2;     % Center x value
-        Objects(2,label_value) = Y;                 % Z distance away
-        Objects(3,label_value) = abs(X_1 - X_2);    % Width of car
-        
-        
-        
-        for old_object = 1: old_max_label
-            %spacing(label_value, old_object) = (Objects(1,label_value)-old_Objects(1,old_object))^2 + (Objects(2,label_value)-old_Objects(2,old_object))^2;
-            spacing(label_value, old_object) = (Objects(2,label_value)-old_Objects(2,old_object)); % Z Velocity only
-        
+        if Width > minimum_width % Remove object if its width is small
+            
+            Objects(1,label_value) = (X_1 + X_2)/2;  % Center x value
+            Objects(2,label_value) = Y;              % Z distance away
+            Objects(3,label_value) = Width;          % Width of car
+            
+            for old_object = 1: old_max_label
+                spacing(label_value, old_object) = (Objects(1,label_value)-old_Objects(1,old_object))^2 + (Objects(2,label_value)-old_Objects(2,old_object))^2;
+                %spacing(label_value, old_object) = (Objects(2,label_value)-old_Objects(2,old_object)); % Z Velocity only
+
+            end
+
+            Diff = insertShape(Diff,'Line',[out.MaxCoordinates{label_value}(1,1) out.MaxCoordinates{label_value}(1,2) out.MaxCoordinates{label_value}(2,1) out.MaxCoordinates{label_value}(2,2)],'LineWidth',5,'Color','green');
+            %location_x = [location_x (Objects(1,label_value)+Objects(3,label_value))/2];
+            %location_y = [location_y Objects(4,label_value)];
+            
+        else
+            number_removed_objects = number_removed_objects + 1;
         end
-        
-        Diff = insertShape(Diff,'Line',[out.MaxCoordinates{label_value}(1,1) out.MaxCoordinates{label_value}(1,2) out.MaxCoordinates{label_value}(2,1) out.MaxCoordinates{label_value}(2,2)],'LineWidth',5,'Color','green');
-        location_x = [location_x (Objects(1,label_value)+Objects(3,label_value))/2];
-        location_y = [location_y Objects(4,label_value)];
     end
     
+    max_label = max_label - number_removed_objects; % Adjust for removed objects
+    
     Objects(:,max_label+1:max_objects) = 0; % Clear Previous Labelled
+    list_order = 1:max_label;
+    
+    found_label_1 = false ; 
+    found_label_2 = false ;
     
     for label_value = 1:max_label
         [Objects(5,label_value),Objects(4,label_value)] = min(abs(spacing(label_value,:)));
         
-        if Objects(5,label_value) > max_distance 
+        if Objects(5,label_value) > max_distance % If new object
             Objects(4,label_value) = 0;
             Objects(5,label_value) = 0;
         else
             Objects(5,label_value) = spacing(label_value,Objects(4,label_value));
+            
+            if Objects(4,label_value) == 1
+                location_x = [location_x Objects(1,label_value)];
+                location_y = [location_y Objects(2,label_value)];
+                found_label_1 = true; 
+            elseif Objects(4,label_value) == 2
+                location_x_2 = [location_x_2 Objects(1,label_value)];
+                location_y_2 = [location_y_2 Objects(2,label_value)];
+                found_label_2 = true ; 
+            end
         end
     end
     
+    if ~found_label_1
+        location_x = [location_x NaN];
+        location_y = [location_y NaN];
+    end
+    
+    if ~found_label_2
+        location_x_2 = [location_x_2 NaN];
+        location_y_2 = [location_y_2 NaN];
+    end
+    
+    %counter
     %spacing
     %Objects
+    
+    imwrite(Diff,"images/"+string(counter)+".png");
     
     writeVideo(vid_writer,Diff);
     counter = counter + 1;
 end
+
+location_total = transpose([location_x ;location_y]);%transpose([location_x ;location_y;location_x_2 ;location_y_2]);
+
+writematrix(location_total,'Output/output_location.csv');
+
+figure(1)
+plot(location_x,location_y)
+
+figure(2)
+plot(location_x_2,location_y_2)
 
 close(vid_writer)
