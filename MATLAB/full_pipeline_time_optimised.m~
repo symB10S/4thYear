@@ -40,7 +40,7 @@ end
 %  Setup Video Reader/Writer  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-frame_scale_factor    = 1;
+frame_scale_factor    = 0.7;
 kernel_imclose        = strel('disk',5);
 kernel_connected_size = 4;
 
@@ -54,9 +54,9 @@ video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 video_input = VideoReader(video_path);
 
 %vid_writer = VideoWriter('Output/original_0p1.mp4','MPEG-4'); % Mac
-video_writer = VideoWriter('Output/original_0p1.mp4');         % Linux
+%video_writer = VideoWriter('Output/original_0p1.mp4');         % Linux
 
-open(video_writer);
+%open(video_writer);
 
 %background = readFrame(Vid);
 background              = imread("OneVehicle/Background Image/0235.png");
@@ -144,7 +144,7 @@ while hasFrame(video_input)
 
             end
 
-            frame_subtracted = insertShape(frame_subtracted,'Line',[out.MaxCoordinates{label_current}(1,1) out.MaxCoordinates{label_current}(1,2) out.MaxCoordinates{label_current}(2,1) out.MaxCoordinates{label_current}(2,2)],'LineWidth',5,'Color','green');
+            %frame_subtracted = insertShape(frame_subtracted,'Line',[out.MaxCoordinates{label_current}(1,1) out.MaxCoordinates{label_current}(1,2) out.MaxCoordinates{label_current}(2,1) out.MaxCoordinates{label_current}(2,2)],'LineWidth',5,'Color','green');
             
         else
             
@@ -158,10 +158,10 @@ while hasFrame(video_input)
     Objects_current(:,max_label+1:maximum_trackable_objects) = 0; % Clear Previous Labelled
     list_order = 1:max_label;
     
-    %%% 
+    %%% Record Location Matrix + Persistent Labelling
     
-    found_label_1 = false ; 
-    found_label_2 = false ;
+    %found_label_1 = false ; 
+    %found_label_2 = false ;
     
     for label_current = 1:max_label
         
@@ -173,35 +173,47 @@ while hasFrame(video_input)
             Objects_current(5,label_current) = 0;
             
         else
-            Objects_current(5,label_current) = Distance_matrix(label_current,Objects_current(4,label_current));
             
-            if Objects_current(4,label_current) == 1
-                location_x = [location_x Objects_current(1,label_current)];
-                location_y = [location_y Objects_current(2,label_current)];
-                found_label_1 = true; 
-            elseif Objects_current(4,label_current) == 2
-                location_x_2 = [location_x_2 Objects_current(1,label_current)];
-                location_y_2 = [location_y_2 Objects_current(2,label_current)];
-                found_label_2 = true ; 
-            end
+            Objects_current(5,label_current) = Distance_matrix( label_current ,Objects_current(4, label_current ));
+            
+%             if Objects_current(4,label_current) == 1
+                
+%                 location_x = [location_x Objects_current(1,label_current)];
+%                 location_y = [location_y Objects_current(2,label_current)];
+                
+%                 found_label_1 = true; 
+                
+%             elseif Objects_current(4,label_current) == 2
+                
+%                 location_x_2 = [location_x_2 Objects_current(1,label_current)];
+%                 location_y_2 = [location_y_2 Objects_current(2,label_current)];
+                
+%                 found_label_2 = true ; 
+                
+                
+%             end
         end
     end
     
-    if ~found_label_1
-        location_x = [location_x NaN];
-        location_y = [location_y NaN];
-    end
-    
-    if ~found_label_2
-        location_x_2 = [location_x_2 NaN];
-        location_y_2 = [location_y_2 NaN];
-    end
+%     if ~found_label_1
+%         
+%         location_x = [location_x NaN];
+%         location_y = [location_y NaN];
+%         
+%     end
+%     
+%     if ~found_label_2
+%         
+%         location_x_2 = [location_x_2 NaN];
+%         location_y_2 = [location_y_2 NaN];
+%         
+%     end
     
     %counter
     %spacing
     %Objects
     
-    imwrite(frame_subtracted,"images/"+string(counter)+".png");
+%     imwrite(frame_subtracted,"images/"+string(counter)+".png");
     
     writeVideo(video_writer,frame_subtracted);
     counter = counter + 1;
