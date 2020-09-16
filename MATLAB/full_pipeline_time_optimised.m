@@ -40,7 +40,7 @@ end
 %  Setup Video Reader/Writer  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-frame_scale_factor    = 0.7;
+frame_scale_factor    = 0.1;
 kernel_imclose        = strel('disk',5);
 kernel_connected_size = 4;
 
@@ -67,11 +67,11 @@ background_resized_gray = double(rgb2gray(background_resized));
 % Define runtime Arrays %
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
-location_x = [];
-location_y = [];
-
-location_x_2 = [];
-location_y_2 = [];
+% location_x = [];
+% location_y = [];
+% 
+% location_x_2 = [];
+% location_y_2 = [];
 
 Objects_previous = zeros( 5, maximum_trackable_objects );
 Objects_current  = zeros( 5, maximum_trackable_objects );
@@ -123,9 +123,10 @@ while hasFrame(video_input)
         x2 = 1 + floor(out.MaxCoordinates{label_current}(2,1)/frame_scale_factor);
         y  = 1 + 1080 -  floor(max(out.MaxCoordinates{label_current}(1,2),out.MaxCoordinates{label_current}(2,2))/frame_scale_factor);
         
-        if(x1>1920) x1 = 1920; end
-        if(x2>1920) x2 = 1920; end
-        if(y>440)   y  =  440; end
+        if(x1>1920) ,x1 = 1920; end
+        if(x2>1920) ,x2 = 1920; end
+        if(y>440)   ,y  =  440; end
+        if(y<1)     ,y  =    1; end
         
         X_1   = image_to_distance_x(y,x1);
         X_2   = image_to_distance_x(y,x2);

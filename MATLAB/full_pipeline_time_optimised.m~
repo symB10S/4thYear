@@ -67,11 +67,11 @@ background_resized_gray = double(rgb2gray(background_resized));
 % Define runtime Arrays %
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
-location_x = [];
-location_y = [];
-
-location_x_2 = [];
-location_y_2 = [];
+% location_x = [];
+% location_y = [];
+% 
+% location_x_2 = [];
+% location_y_2 = [];
 
 Objects_previous = zeros( 5, maximum_trackable_objects );
 Objects_current  = zeros( 5, maximum_trackable_objects );
@@ -123,9 +123,9 @@ while hasFrame(video_input)
         x2 = 1 + floor(out.MaxCoordinates{label_current}(2,1)/frame_scale_factor);
         y  = 1 + 1080 -  floor(max(out.MaxCoordinates{label_current}(1,2),out.MaxCoordinates{label_current}(2,2))/frame_scale_factor);
         
-        if(x1>1920) x1 = 1920; end
-        if(x2>1920) x2 = 1920; end
-        if(y>440)   y  =  440; end
+        if(x1>1920) ,x1 = 1920; end
+        if(x2>1920) ,x2 = 1920; end
+        if(y>440)   ,y  =  440; end
         
         X_1   = image_to_distance_x(y,x1);
         X_2   = image_to_distance_x(y,x2);
@@ -215,18 +215,18 @@ while hasFrame(video_input)
     
 %     imwrite(frame_subtracted,"images/"+string(counter)+".png");
     
-    writeVideo(video_writer,frame_subtracted);
+%     writeVideo(video_writer,frame_subtracted);
     counter = counter + 1;
 end
 
-location_total = transpose([location_x ;location_y]);%transpose([location_x ;location_y;location_x_2 ;location_y_2]);
+% location_total = transpose([location_x ;location_y]);%transpose([location_x ;location_y;location_x_2 ;location_y_2]);
 
-writematrix(location_total,'Output/output_location.csv');
-
-figure(1)
-plot(location_x,location_y)
-
-figure(2)
-plot(location_x_2,location_y_2)
-
-close(video_writer)
+% writematrix(location_total,'Output/output_location.csv');
+% 
+% figure(1)
+% plot(location_x,location_y)
+% 
+% figure(2)
+% plot(location_x_2,location_y_2)
+% 
+% close(video_writer)

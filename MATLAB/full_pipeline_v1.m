@@ -51,14 +51,16 @@ kernel_connected_size = 4;
 minimum_object_width = 0.5; % in meters
 background_threshold =  10;
 
-video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
+%video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
 %video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
+%video_path = "OneVehicle/Rendered Animation/human_lane_switch.mp4";
+video_path = "OneVehicle/Rendered Animation/lane_switching_single.mp4";
 
 video_input = VideoReader(video_path);
 
-%vid_writer = VideoWriter('Output/original_0p1.mp4','MPEG-4'); % Mac
-video_writer = VideoWriter('Output/original_0p1.mp4');         % Linux
+%video_writer = VideoWriter('Output/original_0p1.mp4','MPEG-4'); % Mac
+video_writer = VideoWriter('Output/two_lanes_0.1_5_4');         % Linux
 
 open(video_writer);
 
@@ -80,7 +82,6 @@ location_y_2 = [];
 Objects_previous = zeros( 5, maximum_trackable_objects );
 Objects_current  = zeros( 5, maximum_trackable_objects );
 Distance_matrix  = zeros( maximum_trackable_objects , maximum_trackable_objects );
-
 
 
 % Step through Video Frames
@@ -125,11 +126,12 @@ while hasFrame(video_input)
         
         x1 = 1 + floor(out.MaxCoordinates{label_current}(1,1)/frame_scale_factor);
         x2 = 1 + floor(out.MaxCoordinates{label_current}(2,1)/frame_scale_factor);
-        y  = 1 + 1080 -  floor(max(out.MaxCoordinates{label_current}(1,2),out.MaxCoordinates{label_current}(2,2))/frame_scale_factor);
+        y  = 1 + 1080 -  floor( max( out.MaxCoordinates{label_current}(1,2) ,out.MaxCoordinates{label_current}(2,2))/frame_scale_factor);
         
         if(x1>1920) x1 = 1920; end
         if(x2>1920) x2 = 1920; end
         if(y>440)   y  =  440; end
+        if(y<1)     y  =    1; end
         
         X_1   = image_to_distance_x(y,x1);
         X_2   = image_to_distance_x(y,x2);
@@ -231,5 +233,10 @@ plot(location_x,location_y)
 
 figure(2)
 plot(location_x_2,location_y_2)
+
+figure(3)
+scatter(location_x,location_y,'r')
+hold on
+scatter(location_x_2,location_y_2,'b')
 
 close(video_writer)
