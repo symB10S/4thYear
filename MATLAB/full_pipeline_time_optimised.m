@@ -59,7 +59,7 @@ video_input = VideoReader(video_path);
 %open(video_writer);
 
 %background = readFrame(Vid);
-background              = imread("OneVehicle/Background Image/0235.png");
+background              = gpuArray(imread("OneVehicle/Background Image/0235.png"));
 background_resized      = imresize(background,frame_scale_factor);
 background_resized_gray = double(rgb2gray(background_resized));
 
@@ -86,7 +86,7 @@ max_label = 0;
 while hasFrame(video_input)
     
     %%% LOAD DATA %%%
-    frame_current = readFrame( video_input ); 
+    frame_current = gpuArray(readFrame( video_input )); 
     frame_resized = imresize( frame_current,frame_scale_factor );
     
     frame_subtracted = abs( double( rgb2gray( frame_resized ))- background_resized_gray );

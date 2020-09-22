@@ -8,7 +8,7 @@ p_y = 540.0000 ;
 s = 0;
 H = 2.5;
 
-maximum_trackable_objects = 10; % Maximum trackable objects
+maximum_trackable_objects = 100; % Maximum trackable objects
 max_label_distance = 5; % Maximum distance threshold
 
 image_width = 1920;
@@ -48,14 +48,15 @@ kernel_connected_size = 4;
 % kernel_imclose        = strel('disk',5);
 % kernel_connected_size = 4;
 
-minimum_object_width = 0.5; % in meters
-background_threshold =  10;
+minimum_object_width = 0.1; % in meters
+background_threshold =  100;
 
 %video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
 %video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
-%video_path = "OneVehicle/Rendered Animation/human_lane_switch.mp4";
-video_path = "OneVehicle/Rendered Animation/lane_switching_single.mp4";
+%video_path = "OneVehicle/Rendered Animation/walking_lane_switching.mp4";
+%video_path = "OneVehicle/Rendered Animation/lane_switching_single.mp4";
+video_path = "OneVehicle/Rendered Animation/Braking-1.m4v";
 
 video_input = VideoReader(video_path);
 
@@ -65,7 +66,9 @@ video_writer = VideoWriter('Output/two_lanes_0.1_5_4');         % Linux
 open(video_writer);
 
 %background = readFrame(Vid);
-background              = imread("OneVehicle/Background Image/0235.png");
+%background              = imread("OneVehicle/Background Image/0235.png");
+%background              = imread("OneVehicle/Background Image/walking.png");
+background              = imread("OneVehicle/Background Image/Background.png");
 background_resized      = imresize(background,frame_scale_factor);
 background_resized_gray = double(rgb2gray(background_resized));
 
@@ -224,9 +227,10 @@ while hasFrame(video_input)
     counter = counter + 1;
 end
 
-location_total = transpose([location_x ;location_y]);%transpose([location_x ;location_y;location_x_2 ;location_y_2]);
+%location_total = transpose([location_x ;location_y]);
+%location_total = transpose([location_x ;location_y;location_x_2 ;location_y_2]);
 
-writematrix(location_total,'Output/output_location.csv');
+%writematrix(location_total,'Output/output_location.csv');
 
 figure(1)
 plot(location_x,location_y)
