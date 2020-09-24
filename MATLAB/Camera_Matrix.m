@@ -1,8 +1,11 @@
-f_x = 1000;
-f_y = 1000;
-p_x = 600;
-p_y = 600;
+f_x = 2008.8053  ;
+f_y = 2008.8053 ;
+p_x = 960.0000;
+p_y = 540.0000 ;
 s = 0;
+
+image_width = 1920;
+image_height = 1080;
 
 K = [f_x s p_x;0 f_y p_y;0 0 1];
 K_inv = [f_y 0 (-p_x*f_y);0 f_x (-p_y*f_x);0 0 (f_x*f_y)]*1/((f_x).*(f_y));
@@ -11,23 +14,32 @@ K_inv = [f_y 0 (-p_x*f_y);0 f_x (-p_y*f_x);0 0 (f_x*f_y)]*1/((f_x).*(f_y));
 theta = 0;
 R = [1 0 0; 0 cos(theta) sin(theta); 0 -sin(theta) cos(theta)];
 
-%=== DEFINE A CUBE ===%
-L = 1;
-H = 1;
-D = 4;
+%=== DEFINE A RECTANGLE ===%
+%Car Parameters
+%Length     =  4.36m
+%Width         =  1.74m
+%Height         =  1.46m
 
-delta_x = L/2;
-delta_y = -H/2;
+
+W = 1.74;    %Width
+L = 4.36;     %Lenght
+T = 1.46;    %Tallness
+
+H = 2.5;  %Camera Height 
+D = 24.63; %Distance from Camera
+
+delta_x = -2.03;
+delta_y = -H;
 delta_z = 0;
 
-p_1 = [0;L;D]+[delta_x;delta_y;delta_z];
-p_2 = [L;L;D]+[delta_x;delta_y;delta_z];
-p_3 = [L;0;D]+[delta_x;delta_y;delta_z];
-p_4 = [0;0;D]+[delta_x;delta_y;delta_z];
-p_5 = p_1 + [0;0;H];
-p_6 = p_2 + [0;0;H];
-p_7 = p_3 + [0;0;H];
-p_8 = p_4 + [0;0;H];
+p_1 = [-W/2;T;D]+[delta_x;delta_y;delta_z];
+p_2 = [W/2;T;D]+[delta_x;delta_y;delta_z];
+p_3 = [W/2;0;D]+[delta_x;delta_y;delta_z];
+p_4 = [-W/2;0;D]+[delta_x;delta_y;delta_z];
+p_5 = p_1 + [0;0;L];
+p_6 = p_2 + [0;0;L];
+p_7 = p_3 + [0;0;L];
+p_8 = p_4 + [0;0;L];
 
 %Transform Points Individually 3D -> 2D
 P_1 = K*p_1;
@@ -47,9 +59,17 @@ for I = p_array
     out = [out K*R*I];
 end
 
+
+image = imread("OneVehicle/Rendered Images/0185.png");
+image_flipped = flip(image ,1);     
+
 figure(1)
+imshow(image_flipped)
+%imshow("OneVehicle/Rendered Images/0200.png")
+%imshow("scaled_1.png")
+hold on
 plot(out(1,:)./out(3,:),out(2,:)./out(3,:))
-axis([0 1200 0 1200])
+axis([0 image_width 0 image_height])
 
 %=== DEFINE A ROAD ===%
 W = 1 ;
@@ -71,13 +91,13 @@ end
 
 figure(2)
 plot(out(1,:)./out(3,:),out(2,:)./out(3,:))
-axis([0 1200 0 1200])
+axis([0 image_width 0 image_height])
 
 
 %=== DEFINE ZIG-ZAG ROAD ===%
 W = 1 ;
 D = 2 ;
-H = 2 ;
+H = 2.5 ;
 S = 0.2;
 number_zigs = 20;
 
@@ -100,7 +120,7 @@ end
 
 figure(3)
 plot(out(1,:)./out(3,:),out(2,:)./out(3,:))
-axis([0 1200 0 1200])
+axis([0 image_width 0 image_height])
 
 
 % === INVERSE CAMERA MATRIX === %
@@ -111,7 +131,45 @@ rates = K_inv*p_in;
 parameter = -H/rates(2);
 p_out = rates*parameter
 
+% Generate Perspective for lower than Horizon
+blank_image = zeros(image_height,image_width,3,'uint8');
+blank_image_x= [];
+blank_image_y= [];
+blank_image_z= [];
+blank_image_abs= [];
 
+for i = 1:image_height/2-100
+    for j = 1:image_width
+        p_in = [j;i;1];
+        
+        rates = K_inv*p_in;
+        parameter = -H/rates(2);
+        p_out = rates*parameter;
+        
+        blank_image_x(i,j) = p_out(1);
+        blank_image_y(i,j) = p_out(2);
+        blank_image_z(i,j) = p_out(3);
+        
+        blank_image_abs(i,j)= sqrt(p_out(1)*p_out(1)+p_out(2)*p_out(2)+p_out(3)*p_out(3));
+        %image(round(p_out(1)),round(p_out(3)),:) = image_flipped(i,j,:);
+    end
+end
 
+figure(4)
+h = surf(blank_image_x)
+set(h,'LineStyle','none')
+
+figure(5)
+h = surf(blank_image_y)
+set(h,'LineStyle','none')
+
+figure(6)
+h = surf(blank_image_z)
+set(h,'LineStyle','none')
+
+figure(7)
+h = surf(blank_image_abs)
+set(h,'LineStyle','none')
+        
 
 
