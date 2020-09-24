@@ -1,12 +1,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup Camera Transformation %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Blender Settings
+
 f_x = 2008.8053  ;
 f_y = 2008.8053 ;
 p_x = 960.0000;
 p_y = 540.0000 ;
 s = 0;
 H = 2.5;
+
+% f_x = 3022.58829918849  ;
+% f_y = 3023.43980585740 ;
+% p_x = 972.352942326151;
+% p_y = 527.209473101826 ;
+% s = 0;
+% H = 1.5;
+
 
 maximum_trackable_objects = 10; % Maximum trackable objects
 max_label_distance = 5; % Maximum distance threshold

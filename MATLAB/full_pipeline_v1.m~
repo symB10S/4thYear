@@ -49,14 +49,14 @@ kernel_connected_size = 4;
 % kernel_connected_size = 4;
 
 minimum_object_width = 0.1; % in meters
-background_threshold =  10;
+background_threshold =  100;
 
 %video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
-video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
+%video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
 %video_path = "OneVehicle/Rendered Animation/walking_lane_switching.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching_single.mp4";
-%video_path = "OneVehicle/Rendered Animation/Braking-1.m4v";
+video_path = "OneVehicle/Rendered Animation/Braking-1.m4v";
 
 video_input = VideoReader(video_path);
 
@@ -68,7 +68,8 @@ open(video_writer);
 %background = readFrame(Vid);
 %background              = imread("OneVehicle/Background Image/0235.png");
 %background              = imread("OneVehicle/Background Image/walking.png");
-background_resized      = imresize(background,frame_scale_factor);
+background              = imread("OneVehicle/Background Image/Background.png");
+background_resized      = background ;%imresize(background,frame_scale_factor);
 background_resized_gray = double(rgb2gray(background_resized));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -171,6 +172,10 @@ while hasFrame(video_input)
     found_label_1 = false ; 
     found_label_2 = false ;
     
+    if ( max_label > maximum_trackable_objects) 
+        max_label = maximum_trackable_objects; 
+    end
+    
     for label_current = 1:max_label
         
         [Objects_current(5,label_current),Objects_current(4,label_current)] = min(abs(Distance_matrix(label_current,:)));
@@ -227,9 +232,9 @@ while hasFrame(video_input)
 end
 
 %location_total = transpose([location_x ;location_y]);
-location_total = transpose([location_x ;location_y;location_x_2 ;location_y_2]);
+%location_total = transpose([location_x ;location_y;location_x_2 ;location_y_2]);
 
-writematrix(location_total,'Output/output_location.csv');
+%writematrix(location_total,'Output/output_location.csv');
 
 figure(1)
 plot(location_x,location_y)

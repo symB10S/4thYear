@@ -8,7 +8,7 @@ p_y = 540.0000 ;
 s = 0;
 H = 2.5;
 
-maximum_trackable_objects = 100; % Maximum trackable objects
+maximum_trackable_objects = 10; % Maximum trackable objects
 max_label_distance = 5; % Maximum distance threshold
 
 image_width = 1920;
@@ -171,6 +171,10 @@ while hasFrame(video_input)
     
     found_label_1 = false ; 
     found_label_2 = false ;
+    
+    if ( max_label > maximum_trackable_objects) 
+        max_label = maximum_trackable_objects; 
+    end
     
     for label_current = 1:max_label
         
