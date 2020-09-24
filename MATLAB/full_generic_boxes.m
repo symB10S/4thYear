@@ -64,6 +64,7 @@ end
 
 frame_scale_factor    = 0.5;
 kernel_imclose        = strel('disk',10);
+kernel_imerode        = strel('disk',10);
 kernel_connected_size = 8;
 
 minimum_object_width = 0.1; % in meters
@@ -118,15 +119,23 @@ while hasFrame(video_input)
     frame_current = readFrame( video_input ); 
     frame_resized = imresize( frame_current,frame_scale_factor );
     
+    %%% BACKGROUND SUBTRACTION %%%
     frame_subtracted = abs( double( rgb2gray( frame_resized ))- background_resized_gray );
+    
+    %%% THRESHOLD IMAGE %%%
+    
+    % (1)----> Custom Method
     frame_subtracted( frame_subtracted < background_threshold ) = 0;
     frame_subtracted( frame_subtracted >= background_threshold ) = 1;
     
-    frame_subtracted = bwareaopen(frame_subtracted, 50);
+    % (2)----> MATLAB Binarization
+    %frame_subtracted = imbinarize(frame_subtracted,'adaptive','Sensitivity',0.2);
     
     frame_subtracted = imclose(frame_subtracted,kernel_imclose); % close image --> imfill(Diff,'holes')
     frame_subtracted = imfill(frame_subtracted,'holes');
-    frame_subtracted = imerode(frame_subtracted,kernel_imclose); % erode small pixels
+    frame_subtracted = imerode(frame_subtracted,kernel_imerode); % erode small pixels
+    
+    frame_subtracted = bwareaopen(frame_subtracted, 10); % remove objects with pixels less than n
     
     cc = bwconncomp( frame_subtracted,8 ); % find connected pixels
     
@@ -135,8 +144,13 @@ while hasFrame(video_input)
     Objects_previous = Objects_current;  
     Distance_matrix  = NaN(maximum_trackable_objects,maximum_trackable_objects);
     
-    %Feret Parameters
-    [out,LM] = bwferet(cc,'MaxFeretProperties'); % Get Feret Properies
+    % Feret Parameters
+%     [out,LM] = bwferet(cc,'MaxFeretProperties'); % Get Feret Properies
+%     max_label = max(LM(:)); % Find max label
+    
+    % Bounding box
+    bounding_box = regionprops(cc,'BoundingBox');
+    LM = labelmatrix(cc);
     max_label = max(LM(:)); % Find max label
     
     number_removed_objects = 0 ; 
@@ -144,14 +158,28 @@ while hasFrame(video_input)
         
         label_current = label_index - number_removed_objects; % Adjust for removed objects
         
-        x1 = 1 + floor(out.MaxCoordinates{label_current}(1,1)/frame_scale_factor); % 
-        x2 = 1 + floor(out.MaxCoordinates{label_current}(2,1)/frame_scale_factor);
-        y  = 1 + image_height -  floor( max( out.MaxCoordinates{label_current}(1,2) ,out.MaxCoordinates{label_current}(2,2))/frame_scale_factor);
+        % bounding box --> Feret
+%         box_x1 = out.MaxCoordinates{label_current}(1,1);
+%         box_y1 = out.MaxCoordinates{label_current}(1,2);
+%         box_x2 = out.MaxCoordinates{label_current}(2,1);
+%         box_y2 = out.MaxCoordinates{label_current}(2,2);
         
-        if(x1>image_width) x1 = image_width; end
-        if(x2>image_width) x2 = image_width; end
-        if(y>image_height/2 - image_height_buffer )   y  =  image_height/2- image_height_buffer; end
-        if(y<1)     y  =    1; end
+        % bounding box --> General
+        box_x1 = bounding_box(label_current).BoundingBox(1);
+        box_y1 = bounding_box(label_current).BoundingBox(2);
+        box_x2 = box_x1 + bounding_box(label_current).BoundingBox(3);
+        box_y2 = box_y1 + bounding_box(label_current).BoundingBox(4);
+        
+        % co-ordinates adjusted for scale factor
+        x1 = 1 + floor(box_x1/frame_scale_factor);  
+        x2 = 1 + floor(box_x2/frame_scale_factor);
+        y  = 1 + image_height -  floor( max( box_y1 ,box_y2 )/frame_scale_factor);
+        
+        % avoid above horizon 
+        if(x1>image_width)                              x1 = image_width; end
+        if(x2>image_width)                              x2 = image_width; end
+        if(y>image_height/2 - image_height_buffer )     y  = image_height/2 - image_height_buffer; end
+        if(y<1)                                         y  = 1; end
         
         X_1   = image_to_distance_x(y,x1);
         X_2   = image_to_distance_x(y,x2);
@@ -172,7 +200,7 @@ while hasFrame(video_input)
 
             %frame_subtracted = insertShape(frame_subtracted,'Line',[out.MaxCoordinates{label_current}(1,1) out.MaxCoordinates{label_current}(1,2) out.MaxCoordinates{label_current}(2,1) out.MaxCoordinates{label_current}(2,2)],'LineWidth',5,'Color','green');
             %frame_subtracted = insertShape(frame_subtracted,'Rectangle',[min(out.MaxCoordinates{label_current}(1,1),out.MaxCoordinates{label_current}(2,1)) min(out.MaxCoordinates{label_current}(1,2),out.MaxCoordinates{label_current}(2,2)) abs(out.MaxCoordinates{label_current}(1,1) - out.MaxCoordinates{label_current}(2,1)) abs(out.MaxCoordinates{label_current}(1,2) - out.MaxCoordinates{label_current}(2,2))],'LineWidth',5,'Color','green');
-            frame_resized = insertShape(frame_resized,'Rectangle',[min(out.MaxCoordinates{label_current}(1,1),out.MaxCoordinates{label_current}(2,1)) min(out.MaxCoordinates{label_current}(1,2),out.MaxCoordinates{label_current}(2,2)) abs(out.MaxCoordinates{label_current}(1,1) - out.MaxCoordinates{label_current}(2,1)) abs(out.MaxCoordinates{label_current}(1,2) - out.MaxCoordinates{label_current}(2,2))],'LineWidth',5,'Color','green');
+            frame_resized = insertShape(frame_resized,'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
             
         else
             
