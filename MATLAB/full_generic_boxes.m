@@ -18,19 +18,18 @@ f_y = 3023.43980585740 ;
 p_x = 972.352942326151;
 p_y = 527.209473101826 ;
 s = 0;
-H = 1.5;
+H = 1.3;
 
-image_width = 1280;
-image_height = 720;
-image_height_buffer = 0;
+% image_width = 1280;
+% image_height = 720;
+% image_height_buffer = 0;
 
-% image_width = 1920;
-% image_height = 1080;
-% image_height_buffer = 100;
+image_width = 1920;
+image_height = 1080;
+image_height_buffer = 100;
 
 maximum_trackable_objects = 10; % Maximum trackable objects
 max_label_distance = 5; % Maximum distance threshold
-
 
 K = [f_x s p_x;0 f_y p_y;0 0 1];
 K_inv = [f_y 0 (-p_x*f_y);0 f_x (-p_y*f_x);0 0 (f_x*f_y)]*1/((f_x).*(f_y));
@@ -64,19 +63,20 @@ end
 
 frame_scale_factor    = 0.5;
 kernel_imclose        = strel('disk',10);
-kernel_imerode        = strel('disk',10);
+kernel_imerode        = strel('disk',5);
 kernel_connected_size = 8;
 
-minimum_object_width = 0.1; % in meters
-background_threshold =  40;
+minimum_object_width = 1; % in meters
+background_threshold = 40;
 
 %video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
 %video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
 %video_path = "OneVehicle/Rendered Animation/walking_lane_switching.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching_single.mp4";
-video_path = "OneVehicle/Rendered Animation/Braking-1.m4v";
+%video_path = "OneVehicle/Rendered Animation/Braking-1.m4v";
 % video_path = "OneVehicle/Rendered Animation/short_Braking-1.mp4";
+video_path = "OneVehicle/Rendered Animation/Site4_Normal.mp4";
 
 video_input = VideoReader(video_path);
 
@@ -86,11 +86,19 @@ video_writer = VideoWriter('Output/two_lanes_0.1_5_4');         % Linux
 open(video_writer);
 
 %background = readFrame(Vid);
-%background              = imread("OneVehicle/Background Image/0235.png");
+% background              = imread("OneVehicle/Background Image/0235.png");
 %background              = imread("OneVehicle/Background Image/walking.png");
-background              = imread("OneVehicle/Background Image/Background.png");
+% background              = imread("OneVehicle/Background Image/Background.png");
+background              = imread("OneVehicle/Background Image/Site4_Normal_Background.png");
 background_resized      = imresize(background,frame_scale_factor);
 background_resized_gray = double(rgb2gray(background_resized));
+
+img = imshow(background_resized);
+roi = images.roi.AssistedFreehand(img);
+draw(roi)
+
+mask = createMask(roi);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % Define runtime Arrays %
@@ -125,17 +133,20 @@ while hasFrame(video_input)
     %%% THRESHOLD IMAGE %%%
     
     % (1)----> Custom Method
-    frame_subtracted( frame_subtracted < background_threshold ) = 0;
+    frame_subtracted( frame_subtracted <  background_threshold ) = 0;
     frame_subtracted( frame_subtracted >= background_threshold ) = 1;
     
     % (2)----> MATLAB Binarization
     %frame_subtracted = imbinarize(frame_subtracted,'adaptive','Sensitivity',0.2);
     
+    % MASK IMAGE
+    frame_subtracted(~mask) = 0;
+    
     frame_subtracted = imclose(frame_subtracted,kernel_imclose); % close image --> imfill(Diff,'holes')
     frame_subtracted = imfill(frame_subtracted,'holes');
     frame_subtracted = imerode(frame_subtracted,kernel_imerode); % erode small pixels
     
-    frame_subtracted = bwareaopen(frame_subtracted, 10); % remove objects with pixels less than n
+%     frame_subtracted = bwareaopen(frame_subtracted, 20); % remove objects with pixels less than n
     
     cc = bwconncomp( frame_subtracted,8 ); % find connected pixels
     
@@ -201,11 +212,10 @@ while hasFrame(video_input)
             %frame_subtracted = insertShape(frame_subtracted,'Line',[out.MaxCoordinates{label_current}(1,1) out.MaxCoordinates{label_current}(1,2) out.MaxCoordinates{label_current}(2,1) out.MaxCoordinates{label_current}(2,2)],'LineWidth',5,'Color','green');
             %frame_subtracted = insertShape(frame_subtracted,'Rectangle',[min(out.MaxCoordinates{label_current}(1,1),out.MaxCoordinates{label_current}(2,1)) min(out.MaxCoordinates{label_current}(1,2),out.MaxCoordinates{label_current}(2,2)) abs(out.MaxCoordinates{label_current}(1,1) - out.MaxCoordinates{label_current}(2,1)) abs(out.MaxCoordinates{label_current}(1,2) - out.MaxCoordinates{label_current}(2,2))],'LineWidth',5,'Color','green');
             frame_resized = insertShape(frame_resized,'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
+%             frame_subtracted = insertShape(mat2gray(frame_subtracted),'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
             
         else
-            
             number_removed_objects = number_removed_objects + 1;
-            
         end
     end
     
@@ -275,6 +285,8 @@ while hasFrame(video_input)
     %imwrite(frame_subtracted,"images/"+string(counter)+".png");
     
     writeVideo(video_writer,frame_resized);
+%     writeVideo(video_writer,mat2gray(frame_subtracted));
+    
     counter = counter + 1
 end
 
