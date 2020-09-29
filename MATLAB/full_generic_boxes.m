@@ -11,7 +11,7 @@
 % s = 0;
 % H = 2.5;
 
-%%% Camera Settings
+%%% Camera Settings -35mm
 
 f_x = 3022.58829918849  ;
 f_y = 3023.43980585740 ;
@@ -19,6 +19,16 @@ p_x = 972.352942326151;
 p_y = 527.209473101826 ;
 s = 0;
 H = 1.3;
+
+%%% Camera Settings -55mm
+
+% f_x = 4609.85361371183  ;
+% f_y = 4611.98648721446 ;
+% p_x = 965.405810568760;
+% p_y = 498.545149323953;
+% s = 0;
+% H = 1.3;
+
 
 % image_width = 1280;
 % image_height = 720;
@@ -69,14 +79,17 @@ kernel_connected_size = 8;
 minimum_object_width = 1; % in meters
 background_threshold = 40;
 
-%video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
-%video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
-%video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
-%video_path = "OneVehicle/Rendered Animation/walking_lane_switching.mp4";
-%video_path = "OneVehicle/Rendered Animation/lane_switching_single.mp4";
-%video_path = "OneVehicle/Rendered Animation/Braking-1.m4v";
+% video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
+% video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
+% video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
+% video_path = "OneVehicle/Rendered Animation/walking_lane_switching.mp4";
+% video_path = "OneVehicle/Rendered Animation/lane_switching_single.mp4";
+% video_path = "OneVehicle/Rendered Animation/Braking-1.m4v";
 % video_path = "OneVehicle/Rendered Animation/short_Braking-1.mp4";
-video_path = "OneVehicle/Rendered Animation/Site4_Normal.mp4";
+% video_path = "OneVehicle/Rendered Animation/Site4_Normal.mp4";
+% video_path = "OneVehicle/Rendered Animation/Site4_SwitchingLanes.m4v";
+% video_path = "OneVehicle/Rendered Animation/Site3_Normal.m4v";
+video_path = "OneVehicle/Rendered Animation/Site3_Normal_Short.mp4";
 
 video_input = VideoReader(video_path);
 
@@ -85,11 +98,14 @@ video_writer = VideoWriter('Output/two_lanes_0.1_5_4');         % Linux
 
 open(video_writer);
 
-%background = readFrame(Vid);
+% background = readFrame(Vid);
 % background              = imread("OneVehicle/Background Image/0235.png");
-%background              = imread("OneVehicle/Background Image/walking.png");
+% background              = imread("OneVehicle/Background Image/walking.png");
 % background              = imread("OneVehicle/Background Image/Background.png");
-background              = imread("OneVehicle/Background Image/Site4_Normal_Background.png");
+% background              = imread("OneVehicle/Background Image/Site4_Normal_Background.png");
+% background              = imread("OneVehicle/Background Image/Site4_SwitchingLanes_Background.png");
+background              = imread("OneVehicle/Background Image/Site3_Normal_Background.png");
+
 background_resized      = imresize(background,frame_scale_factor);
 background_resized_gray = double(rgb2gray(background_resized));
 
@@ -155,10 +171,6 @@ while hasFrame(video_input)
     Objects_previous = Objects_current;  
     Distance_matrix  = NaN(maximum_trackable_objects,maximum_trackable_objects);
     
-    % Feret Parameters
-%     [out,LM] = bwferet(cc,'MaxFeretProperties'); % Get Feret Properies
-%     max_label = max(LM(:)); % Find max label
-    
     % Bounding box
     bounding_box = regionprops(cc,'BoundingBox');
     LM = labelmatrix(cc);
@@ -168,12 +180,6 @@ while hasFrame(video_input)
     for label_index = 1:max_label
         
         label_current = label_index - number_removed_objects; % Adjust for removed objects
-        
-        % bounding box --> Feret
-%         box_x1 = out.MaxCoordinates{label_current}(1,1);
-%         box_y1 = out.MaxCoordinates{label_current}(1,2);
-%         box_x2 = out.MaxCoordinates{label_current}(2,1);
-%         box_y2 = out.MaxCoordinates{label_current}(2,2);
         
         % bounding box --> General
         box_x1 = bounding_box(label_current).BoundingBox(1);
@@ -209,8 +215,6 @@ while hasFrame(video_input)
 
             end
 
-            %frame_subtracted = insertShape(frame_subtracted,'Line',[out.MaxCoordinates{label_current}(1,1) out.MaxCoordinates{label_current}(1,2) out.MaxCoordinates{label_current}(2,1) out.MaxCoordinates{label_current}(2,2)],'LineWidth',5,'Color','green');
-            %frame_subtracted = insertShape(frame_subtracted,'Rectangle',[min(out.MaxCoordinates{label_current}(1,1),out.MaxCoordinates{label_current}(2,1)) min(out.MaxCoordinates{label_current}(1,2),out.MaxCoordinates{label_current}(2,2)) abs(out.MaxCoordinates{label_current}(1,1) - out.MaxCoordinates{label_current}(2,1)) abs(out.MaxCoordinates{label_current}(1,2) - out.MaxCoordinates{label_current}(2,2))],'LineWidth',5,'Color','green');
             frame_resized = insertShape(frame_resized,'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
 %             frame_subtracted = insertShape(mat2gray(frame_subtracted),'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
             
