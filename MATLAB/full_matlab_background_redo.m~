@@ -25,21 +25,21 @@ image_height_buffer = 10;
 
 %%% Blender settings
 
-% f_x = 2008.8053  ;
-% f_y = 2008.8053 ;
-% p_x = 960.0000;
-% p_y = 540.0000 ;
-% s = 0;
-% H = 2.5;
+f_x = 2008.8053  ;
+f_y = 2008.8053 ;
+p_x = 960.0000;
+p_y = 540.0000 ;
+s = 0;
+H = 2.5;
 
 %%% Camera Settings -35mm
 
-f_x = 3022.58829918849  ;
-f_y = 3023.43980585740 ;
-p_x = 972.352942326151;
-p_y = 527.209473101826 ;
-s = 0;
-H = 1.3;
+% f_x = 3022.58829918849  ;
+% f_y = 3023.43980585740 ;
+% p_x = 972.352942326151;
+% p_y = 527.209473101826 ;
+% s = 0;
+% H = 1.3;
 
 %%% Camera Settings -55mm
 
@@ -81,7 +81,7 @@ end
 %  Setup Video Reader/Writer  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
+% video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
 %video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
 %video_path = "OneVehicle/Rendered Animation/walking_lane_switching.mp4";
@@ -89,7 +89,8 @@ end
 %video_path = "OneVehicle/Rendered Animation/Braking-1.m4v";
 % video_path = "OneVehicle/Rendered Animation/short_Braking-1.mp4";
 % video_path = "OneVehicle/Rendered Animation/Site4_Normal.mp4";
-video_path = "OneVehicle/Rendered Animation/Site4_SwitchingLanes.m4v";
+% video_path = "OneVehicle/Rendered Animation/Site4_SwitchingLanes.m4v";
+video_path = "OneVehicle/Rendered Animation/Site3_Switchinglanes.m4v";
 
 video_input = VideoReader(video_path);
 
@@ -98,12 +99,13 @@ video_writer = VideoWriter('Output/two_lanes_0.1_5_4');         % Linux
 
 open(video_writer);
 
-background = readFrame(video_input);
+% background = readFrame(video_input);
 % background              = imread("OneVehicle/Background Image/0235.png");
 % background              = imread("OneVehicle/Background Image/walking.png");
 % background              = imread("OneVehicle/Background Image/Background.png");
 % background              = imread("OneVehicle/Background Image/Site4_Normal_Background.png");
 % background              = imread("OneVehicle/Background Image/Site4_SwitchingLanes_Background.png");
+background              = imread("OneVehicle/Background Image/Site3_Switchinglanes_Background.png");
 
 background_resized      = imresize(background,frame_scale_factor);
 background_resized_gray = double(rgb2gray(background_resized));
@@ -121,13 +123,13 @@ mask = createMask(roi);
 % MATLAB Foreground Detector %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% detector =  vision.ForegroundDetector(...
-%             'NumTrainingFrames', 150, ...
-%             'InitialVariance', 30*30, ...
-%             'NumGaussians',7);
+detector =  vision.ForegroundDetector(...
+            'NumTrainingFrames', 3, ...
+            'InitialVariance', 30*30, ...
+            'NumGaussians',3);
+        %frames - gaussians
+        %     3 - 3  = good for end
         
-detector = vehicleDetectorACF();
-
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % Define runtime Arrays %
 %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -168,17 +170,15 @@ while hasFrame(video_input)
 %     frame_subtracted = imbinarize(frame_subtracted,'adaptive','Sensitivity',0.2);
     
     % MASK IMAGE
-    frame_subtracted = rgb2gray( frame_resized ); % for (3) as creation of thid variable
-    frame_subtracted(~mask) = 0;
+%     frame_subtracted = rgb2gray( frame_resized ); % for (3) as creation of this variable
+%     frame_subtracted(~mask) = 0;
+    frame_resized = bsxfun(@times, frame_resized, cast(mask, 'like', frame_resized));
 
     % (3)----> MATLAB Forground Detector
-    frame_subtracted = detector(frame_subtracted);
-    
-    % (4)----> MATLAB acfO Detector
-    
-    
+    frame_subtracted = detector(frame_resized);
+
     % MASK IMAGE
-    frame_subtracted(~mask) = 0;
+%     frame_subtracted(~mask) = 0;
     
     frame_subtracted = imclose(frame_subtracted,kernel_imclose); % close image --> imfill(Diff,'holes')
     frame_subtracted = imfill(frame_subtracted,'holes');
@@ -192,10 +192,6 @@ while hasFrame(video_input)
     old_max_label    = max_label;
     Objects_previous = Objects_current;  
     Distance_matrix  = NaN(maximum_trackable_objects,maximum_trackable_objects);
-    
-    % Feret Parameters
-%     [out,LM] = bwferet(cc,'MaxFeretProperties'); % Get Feret Properies
-%     max_label = max(LM(:)); % Find max label
     
     % Bounding box
     bounding_box = regionprops(cc,'BoundingBox');
@@ -246,10 +242,14 @@ while hasFrame(video_input)
                 %spacing(label_value, old_object) = (Objects(2,label_value)-old_Objects(2,old_object)); % Z Velocity only
 
             end
+            label = sprintf('X=%0.2f, Y=%0.2f', Objects_current(1,label_current), Objects_current(2,label_current));
+
+            frame_resized = insertObjectAnnotation(frame_resized, ...
+                    'rectangle', bounding_box(label_current).BoundingBox, label, 'Color','g');
             
             % Insert Shape
 %             frame_resized = insertShape(frame_resized,'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
-            frame_subtracted = insertShape(mat2gray(frame_subtracted),'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
+%             frame_subtracted = insertShape(mat2gray(frame_subtracted),'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
             
         else
             number_removed_objects = number_removed_objects + 1;
@@ -316,8 +316,8 @@ while hasFrame(video_input)
     end
     
     % Write Output Video    
-%     writeVideo(video_writer,frame_resized);
-    writeVideo(video_writer,mat2gray(frame_subtracted));
+    writeVideo(video_writer,frame_resized);
+%     writeVideo(video_writer,mat2gray(frame_subtracted));
     
     counter = counter + 1
 end

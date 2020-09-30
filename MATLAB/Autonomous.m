@@ -29,13 +29,14 @@ sensor = monoCamera(camIntrinsics, height, 'Pitch', pitch);
 %Load an input video
 % videoName = 'C:\Users\Mahant Swami\Desktop\Autonomous\test.mkv'; % Mihir
 % videoName = "OneVehicle/Rendered Animation/Site4_SwitchingLanes.m4v";
-videoName = "OneVehicle/Rendered Animation/Site3_Normal_Short.mp4";
+% videoName = "OneVehicle/Rendered Animation/Site3_Normal_Short.mp4";
+% videoName = "OneVehicle/Rendered Animation/Site4_Normal.mp4";
+videoName = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 videoReader = VideoReader(videoName);
 
 % video_writer = VideoWriter('C:\Users\Mahant Swami\Desktop\Output\Output_1'); % Mihir
-video_writer = VideoWriter('Output/Autonomous_Output');
+video_writer = VideoWriter('Output/Site4_Normal_Autonomous');
 open(video_writer);
-
 
 %timeStamp = 1.5;                   % time from the beginning of the video
 %videoReader.CurrentTime = timeStamp;   % point to the chosen frame
@@ -172,7 +173,7 @@ while hasFrame(videoReader)
     % Overlay the detections on the video frame
     imgOut = insertVehicleDetections(frame, locations, bboxes);
     %figure;
-    imshow(imgOut);
+%     imshow(imgOut);
     
     writeVideo(video_writer,imgOut);
     counter = counter + 1

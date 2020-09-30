@@ -13,21 +13,21 @@
 
 %%% Camera Settings -35mm
 
-f_x = 3022.58829918849  ;
-f_y = 3023.43980585740 ;
-p_x = 972.352942326151;
-p_y = 527.209473101826 ;
-s = 0;
-H = 1.3;
+% f_x = 3022.58829918849  ;
+% f_y = 3023.43980585740 ;
+% p_x = 972.352942326151;
+% p_y = 527.209473101826 ;
+% s = 0;
+% H = 1.3;
 
 %%% Camera Settings -55mm
 
-% f_x = 4609.85361371183  ;
-% f_y = 4611.98648721446 ;
-% p_x = 965.405810568760;
-% p_y = 498.545149323953;
-% s = 0;
-% H = 1.3;
+f_x = 4609.85361371183  ;
+f_y = 4611.98648721446 ;
+p_x = 965.405810568760;
+p_y = 498.545149323953;
+s = 0;
+H = 1.3;
 
 
 % image_width = 1280;
@@ -73,38 +73,57 @@ end
 
 frame_scale_factor    = 0.5;
 kernel_imclose        = strel('disk',10);
-kernel_imerode        = strel('disk',5);
+kernel_imerode        = strel('disk', 5);
 kernel_connected_size = 8;
 
-minimum_object_width = 1; % in meters
-background_threshold = 40;
+minimum_object_width = 1 ; % in meters
+background_threshold = 50;
 
 % video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 % video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
 % video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
 % video_path = "OneVehicle/Rendered Animation/walking_lane_switching.mp4";
 % video_path = "OneVehicle/Rendered Animation/lane_switching_single.mp4";
+
 % video_path = "OneVehicle/Rendered Animation/Braking-1.m4v";
 % video_path = "OneVehicle/Rendered Animation/short_Braking-1.mp4";
+
 % video_path = "OneVehicle/Rendered Animation/Site4_Normal.mp4";
 % video_path = "OneVehicle/Rendered Animation/Site4_SwitchingLanes.m4v";
+
 % video_path = "OneVehicle/Rendered Animation/Site3_Normal.m4v";
-video_path = "OneVehicle/Rendered Animation/Site3_Normal_Short.mp4";
+% video_path = "OneVehicle/Rendered Animation/Site3_Normal_Short.mp4";
+% video_path = "OneVehicle/Rendered Animation/Site3_Switchinglanes.m4v";
+
+% video_path = "4 Sites Footage/Site1/Normal/Site1_55mm_Normal.mp4";
+
+% video_path = "4 Sites Footage/Site2/35mm_Normal/Site2_35mm_Normal.mp4";
+video_path = "4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal.mp4";
 
 video_input = VideoReader(video_path);
 
 %video_writer = VideoWriter('Output/original_0p1.mp4','MPEG-4'); % Mac
-video_writer = VideoWriter('Output/two_lanes_0.1_5_4');         % Linux
+video_writer = VideoWriter('Output/Site2_Normal_55_Ours');         % Linux
 
 open(video_writer);
 
 % background = readFrame(Vid);
 % background              = imread("OneVehicle/Background Image/0235.png");
 % background              = imread("OneVehicle/Background Image/walking.png");
+
 % background              = imread("OneVehicle/Background Image/Background.png");
+
 % background              = imread("OneVehicle/Background Image/Site4_Normal_Background.png");
 % background              = imread("OneVehicle/Background Image/Site4_SwitchingLanes_Background.png");
-background              = imread("OneVehicle/Background Image/Site3_Normal_Background.png");
+
+% background              = imread("OneVehicle/Background Image/Site3_Normal_Background.png");
+% background              = imread("OneVehicle/Background Image/Site3_Switchinglanes_Background.png");
+
+% background              = imread("4 Sites Footage/Site1/Normal/Site1_55mm_Normal_Background.png");
+
+% background              = imread("4 Sites Footage/Site2/35mm_Normal/Site2_35mm_Normal_Background.png");
+background              = imread("4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal_Background.png");
+
 
 background_resized      = imresize(background,frame_scale_factor);
 background_resized_gray = double(rgb2gray(background_resized));
@@ -214,8 +233,12 @@ while hasFrame(video_input)
                 %spacing(label_value, old_object) = (Objects(2,label_value)-old_Objects(2,old_object)); % Z Velocity only
 
             end
+            label = sprintf('X=%0.2f, Y=%0.2f', Objects_current(1,label_current), Objects_current(2,label_current));
 
-            frame_resized = insertShape(frame_resized,'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
+            frame_resized = insertObjectAnnotation(frame_resized, ...
+                    'rectangle', bounding_box(label_current).BoundingBox, label, 'Color','g');
+                
+%             frame_resized = insertShape(frame_resized,'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
 %             frame_subtracted = insertShape(mat2gray(frame_subtracted),'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
             
         else

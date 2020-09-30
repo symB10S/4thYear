@@ -25,21 +25,21 @@ image_height_buffer = 10;
 
 %%% Blender settings
 
-% f_x = 2008.8053  ;
-% f_y = 2008.8053 ;
-% p_x = 960.0000;
-% p_y = 540.0000 ;
-% s = 0;
-% H = 2.5;
+f_x = 2008.8053  ;
+f_y = 2008.8053 ;
+p_x = 960.0000;
+p_y = 540.0000 ;
+s = 0;
+H = 2.5;
 
 %%% Camera Settings -35mm
 
-f_x = 3022.58829918849  ;
-f_y = 3023.43980585740 ;
-p_x = 972.352942326151;
-p_y = 527.209473101826 ;
-s = 0;
-H = 1.3;
+% f_x = 3022.58829918849  ;
+% f_y = 3023.43980585740 ;
+% p_x = 972.352942326151;
+% p_y = 527.209473101826 ;
+% s = 0;
+% H = 1.3;
 
 %%% Camera Settings -55mm
 
@@ -81,7 +81,7 @@ end
 %  Setup Video Reader/Writer  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
+video_path = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
 %video_path = "OneVehicle/Rendered Animation/lane_switching.mp4";
 %video_path = "OneVehicle/Rendered Animation/two_lanes.mp4";
 %video_path = "OneVehicle/Rendered Animation/walking_lane_switching.mp4";
@@ -90,7 +90,7 @@ end
 % video_path = "OneVehicle/Rendered Animation/short_Braking-1.mp4";
 % video_path = "OneVehicle/Rendered Animation/Site4_Normal.mp4";
 % video_path = "OneVehicle/Rendered Animation/Site4_SwitchingLanes.m4v";
-video_path = "OneVehicle/Rendered Animation/Site3_Normal_Short.mp4";
+% video_path = "OneVehicle/Rendered Animation/Site3_Normal_Short.mp4";
 
 video_input = VideoReader(video_path);
 
@@ -99,8 +99,8 @@ video_writer = VideoWriter('Output/Site3_Normal_Short_acf');         % Linux
 
 open(video_writer);
 
-background = readFrame(video_input);
-% background              = imread("OneVehicle/Background Image/0235.png");
+% background = readFrame(video_input);
+background              = imread("OneVehicle/Background Image/0235.png");
 % background              = imread("OneVehicle/Background Image/walking.png");
 % background              = imread("OneVehicle/Background Image/Background.png");
 % background              = imread("OneVehicle/Background Image/Site4_Normal_Background.png");
