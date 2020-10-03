@@ -3,7 +3,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%Blender settings
-
 % f_x = 2008.8053  ;
 % f_y = 2008.8053 ;
 % p_x = 960.0000;
@@ -11,8 +10,19 @@
 % s = 0;
 % H = 2.5;
 
-%%% Camera Settings -35mm
+%%%Blender Hill
+f_x = 1333.3334;
+f_y =  1125.0000;
+p_x = 960.0000;
+p_y = 540.0000 ;
+s = 0;
+H = 2.5;
 
+% image_width = 1920;
+% image_height = 1080;
+
+
+%%% Camera Settings -35mm
 % f_x = 3022.58829918849  ;
 % f_y = 3023.43980585740 ;
 % p_x = 972.352942326151;
@@ -21,27 +31,25 @@
 % H = 1.3;
 
 %%% Camera Settings -55mm
-
-f_x = 4609.85361371183  ;
-f_y = 4611.98648721446 ;
-p_x = 965.405810568760;
-p_y = 498.545149323953;
-s = 0;
-H = 1.3;
-
+% f_x = 4609.85361371183 ;
+% f_y = 4611.98648721446 ;
+% p_x = 965.405810568760 ;
+% p_y = 498.545149323953 ;
+% s   = 0;
+% H   = 1.3;
 
 % image_width = 1280;
 % image_height = 720;
 % image_height_buffer = 0;
 
-image_width = 1920;
+image_width  = 1920;
 image_height = 1080;
 image_height_buffer = 100;
 
 maximum_trackable_objects = 10; % Maximum trackable objects
 max_label_distance = 5; % Maximum distance threshold
 
-K = [f_x s p_x;0 f_y p_y;0 0 1];
+K     = [f_x s p_x;0 f_y p_y;0 0 1];
 K_inv = [f_y 0 (-p_x*f_y);0 f_x (-p_y*f_x);0 0 (f_x*f_y)]*1/((f_x).*(f_y));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -98,7 +106,10 @@ background_threshold = 50;
 % video_path = "4 Sites Footage/Site1/Normal/Site1_55mm_Normal.mp4";
 
 % video_path = "4 Sites Footage/Site2/35mm_Normal/Site2_35mm_Normal.mp4";
-video_path = "4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal.mp4";
+% video_path = "4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal.mp4";
+
+% video_path = "OneVehicle/Rendered Animation/Dodge.mp4";
+video_path = "OneVehicle/Rendered Animation/Bugatti.mp4";
 
 video_input = VideoReader(video_path);
 
@@ -121,9 +132,11 @@ open(video_writer);
 
 % background              = imread("4 Sites Footage/Site1/Normal/Site1_55mm_Normal_Background.png");
 
-% background              = imread("4 Sites Footage/Site2/35mm_Normal/Site2_35mm_Normal_Background.png");
-background              = imread("4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal_Background.png");
+background              = imread("4 Sites Footage/Site2/35mm_Normal/Site2_35mm_Normal_Background.png");
+% background              = imread("4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal_Background.png");
 
+% background              = imread("OneVehicle/Background Image/Dodge_Background.png");
+% background              = imread("OneVehicle/Background Image/racecar_background.png");
 
 background_resized      = imresize(background,frame_scale_factor);
 background_resized_gray = double(rgb2gray(background_resized));
@@ -229,18 +242,16 @@ while hasFrame(video_input)
             Objects_current(3,label_current) = Width;          % Width of car
             
             for old_object = 1: old_max_label
+                
                 Distance_matrix(label_current, old_object) = (Objects_current(1,label_current)-Objects_previous(1,old_object))^2 + (Objects_current(2,label_current)-Objects_previous(2,old_object))^2;
-                %spacing(label_value, old_object) = (Objects(2,label_value)-old_Objects(2,old_object)); % Z Velocity only
-
+            
             end
+            
             label = sprintf('X=%0.2f, Y=%0.2f', Objects_current(1,label_current), Objects_current(2,label_current));
 
             frame_resized = insertObjectAnnotation(frame_resized, ...
-                    'rectangle', bounding_box(label_current).BoundingBox, label, 'Color','g');
-                
-%             frame_resized = insertShape(frame_resized,'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
-%             frame_subtracted = insertShape(mat2gray(frame_subtracted),'Rectangle',[min(box_x1,box_x2) min(box_y1,box_y2) abs(box_x1 - box_x2) abs(box_y1 - box_y2)],'LineWidth',5,'Color','green');
-            
+                            'rectangle', bounding_box(label_current).BoundingBox,...
+                            label, 'Color','g');          
         else
             number_removed_objects = number_removed_objects + 1;
         end
@@ -317,10 +328,10 @@ while hasFrame(video_input)
     counter = counter + 1
 end
 
-%location_total = transpose([location_x ;location_y]);
+location_total = transpose([location_x ;location_y]);
 %location_total = transpose([location_x ;location_y;location_x_2 ;location_y_2]);
 
-%writematrix(location_total,'Output/output_location.csv');
+writematrix(location_total,'Output/output_location.csv');
 
 figure(1)
 plot(location_x,location_y)

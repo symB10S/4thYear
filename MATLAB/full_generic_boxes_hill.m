@@ -10,6 +10,26 @@
 % s = 0;
 % H = 2.5;
 
+%%%Blender Hill -
+% f_x = 1333.3334;
+% f_y =  1125.0000;
+% p_x = 960.0000;
+% p_y = 540.0000 ;
+% s = 0;
+% H = 2.5;
+
+%%%Blender Hill - 35 mm
+f_x = 2008.8053 ;
+f_y = 1694.9294;
+p_x = 960.0000;
+p_y = 540.0000 ;
+s = 0;
+H = 2.5;
+
+% image_width = 1920;
+% image_height = 1080;
+
+
 %%% Camera Settings -35mm
 % f_x = 3022.58829918849  ;
 % f_y = 3023.43980585740 ;
@@ -19,12 +39,12 @@
 % H = 1.3;
 
 %%% Camera Settings -55mm
-f_x = 4609.85361371183 ;
-f_y = 4611.98648721446 ;
-p_x = 965.405810568760 ;
-p_y = 498.545149323953 ;
-s   = 0;
-H   = 1.3;
+% f_x = 4609.85361371183 ;
+% f_y = 4611.98648721446 ;
+% p_x = 965.405810568760 ;
+% p_y = 498.545149323953 ;
+% s   = 0;
+% H   = 1.3;
 
 % image_width = 1280;
 % image_height = 720;
@@ -49,17 +69,56 @@ image_to_distance_y= [];
 image_to_distance_z= [];
 
 
-for i = 1:image_height/2-image_height_buffer
+alpha  = deg2rad(30);
+P_hill =   [0;-H;30];
+
+p_hill = K*P_hill;
+p_hill = floor(p_hill./p_hill(3))
+
+
+
+for i = 1:p_hill(2)
     for j = 1:image_width
+        
         p_in = [j;i;1];
+        p_plane = [0;-H;0];
         
-        rates = K_inv*p_in;
-        parameter = -H/rates(2);
-        p_out = rates*parameter;
+%         normal = [0;1/2;-1/2];
+        normal = [0;1;0];
         
-        image_to_distance_x(i,j) = p_out(1);
-        image_to_distance_y(i,j) = p_out(2);
-        image_to_distance_z(i,j) = p_out(3);
+%         rates = K_inv*p_in;
+%         parameter = -H/rates(2);
+%         p_out = rates*parameter;
+
+        line_vector = K_inv*p_in;
+        parameter = dot(p_plane,normal)/(dot(line_vector,normal));
+        p_out = line_vector*parameter;
+        
+        image_to_distance_x(i,j) = p_out(1) ;
+        image_to_distance_y(i,j) = p_out(2) ;
+        image_to_distance_z(i,j) = p_out(3) ;
+        
+        %image(round(p_out(1)),round(p_out(3)),:) = image_flipped(i,j,:);
+    end
+end
+for i = p_hill(2):image_height
+    for j = 1:image_width
+        
+        p_in = [j;i;1];
+        p_plane = P_hill;
+        
+%         normal = [0;1;-1]; %45 Degrees
+        normal = [0;cos(alpha);-sin(alpha)];
+        
+        line_vector = K_inv*p_in;
+        parameter = dot(p_plane,normal)/(dot(line_vector,normal));
+        p_out = line_vector*parameter;
+        
+        image_to_distance_x(i,j) = p_out(1) ;
+        image_to_distance_y(i,j) = p_out(2) ;
+        image_to_distance_z(i,j) = p_out(3) ;
+       
+        %image(round(p_out(1)),round(p_out(3)),:) = image_flipped(i,j,:);
     end
 end
 
@@ -94,7 +153,15 @@ background_threshold = 50;
 % video_path = "4 Sites Footage/Site1/Normal/Site1_55mm_Normal.mp4";
 
 % video_path = "4 Sites Footage/Site2/35mm_Normal/Site2_35mm_Normal.mp4";
-video_path = "4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal.mp4";
+% video_path = "4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal.mp4";
+
+% video_path = "OneVehicle/Rendered Animation/Dodge.mp4";
+% video_path = "OneVehicle/Rendered Animation/Bugatti.mp4";
+
+% video_path = "OneVehicle/Rendered Animation/45deg_25mm_Normal.mp4";
+video_path = "OneVehicle/Rendered Animation/30deg_35mm_Normal.mp4";
+% video_path = "OneVehicle/Rendered Animation/15deg_35mm_Normal.mp4";
+
 
 video_input = VideoReader(video_path);
 
@@ -118,8 +185,14 @@ open(video_writer);
 % background              = imread("4 Sites Footage/Site1/Normal/Site1_55mm_Normal_Background.png");
 
 % background              = imread("4 Sites Footage/Site2/35mm_Normal/Site2_35mm_Normal_Background.png");
-background              = imread("4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal_Background.png");
+% background              = imread("4 Sites Footage/Site2/55mm_Normal/Site2_55mm_Normal_Background.png");
 
+% background              = imread("OneVehicle/Background Image/Dodge_Background.png");
+% background              = imread("OneVehicle/Background Image/racecar_background.png");
+
+% background              = imread("OneVehicle/Background Image/45deg_25mm_Normal_Background.png");
+background              = imread("OneVehicle/Background Image/30deg_35mm_Normal_Background.png");
+% background              = imread("OneVehicle/Background Image/15deg_35mm_Normal_Background.png");
 
 background_resized      = imresize(background,frame_scale_factor);
 background_resized_gray = double(rgb2gray(background_resized));
@@ -210,7 +283,7 @@ while hasFrame(video_input)
         % avoid above horizon 
         if(x1>image_width)                              x1 = image_width; end
         if(x2>image_width)                              x2 = image_width; end
-        if(y>image_height/2 - image_height_buffer )     y  = image_height/2 - image_height_buffer; end
+        if(y>image_height)                              y  = image_height; end
         if(y<1)                                         y  = 1; end
         
         X_1   = image_to_distance_x(y,x1);
@@ -309,7 +382,6 @@ while hasFrame(video_input)
 %     writeVideo(video_writer,mat2gray(frame_subtracted));
     
     counter = counter + 1
-    
 end
 
 location_total = transpose([location_x ;location_y]);

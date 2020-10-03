@@ -1,22 +1,42 @@
 %Autonomous Driving Toolbox 
 %Visual Perception Using Monocular Camera
 
-% Mihir
+% Blender 1
 % focalLength    = [2008.8053, 2008.8053]; % [fx, fy] in pixel units
 % principalPoint = [960, 540];             % [cx, cy] optical center in pixel coordinates
 % imageSize      = [1080, 1920];           % [nrows, mcols]
 
-% 35 mm
-focalLength    = [3022.58829918849, 3023.43980585740]; % [fx, fy] in pixel units
-principalPoint = [972.352942326151, 527.209473101826];             % [cx, cy] optical center in pixel coordinates
+% Blender 25mm
+% f_x = 1333.3334;
+% f_y =  1125.0000;
+% p_x = 960.0000;
+% p_y = 540.0000 ;
+% s = 0;
+% H = 2.5;
+
+% Blender 35mm
+f_x = 2008.8053 ;
+f_y = 1694.9294;
+p_x = 960.0000;
+p_y = 540.0000 ;
+s = 0;
+H = 2.5;
+
+focalLength    = [f_x, f_y]; % [fx, fy] in pixel units
+principalPoint = [p_x, p_y];             % [cx, cy] optical center in pixel coordinates
 imageSize      = [1080, 1920];           % [nrows, mcols]
+
+% 35 mm
+% focalLength    = [3022.58829918849, 3023.43980585740]; % [fx, fy] in pixel units
+% principalPoint = [972.352942326151, 527.209473101826];             % [cx, cy] optical center in pixel coordinates
+% imageSize      = [1080, 1920];           % [nrows, mcols]
 
 % The variables/ parameters are then stored in the camera intrinsics
 % function of Computer Vision ToolBox
 camIntrinsics = cameraIntrinsics(focalLength, principalPoint, imageSize);
 
 % mounting height in meters from the ground
-height = 1.3;    
+height = H;    
 % pitch of the camera in degrees, rotation in x direction the pitch
 % represents the tilt of the camera from the horizontal position
 pitch  = 0;      
@@ -31,12 +51,24 @@ sensor = monoCamera(camIntrinsics, height, 'Pitch', pitch);
 % videoName = "OneVehicle/Rendered Animation/Site4_SwitchingLanes.m4v";
 % videoName = "OneVehicle/Rendered Animation/Site3_Normal_Short.mp4";
 % videoName = "OneVehicle/Rendered Animation/Site4_Normal.mp4";
-videoName = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
+% videoName = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
+
+% videoName = "OneVehicle/Rendered Animation/Dodge.mp4";
+% videoName = "OneVehicle/Rendered Animation/racecar.mp4";
+% videoName = "OneVehicle/Rendered Animation/Bugatti.mp4";
+
+% videoName = "OneVehicle/Rendered Animation/45deg_25mm_Normal.mp4";
+% videoName = "OneVehicle/Rendered Animation/30deg_35mm_Normal.mp4";
+videoName = "OneVehicle/Rendered Animation/15deg_35mm_Normal.mp4";
+
 videoReader = VideoReader(videoName);
 
 % video_writer = VideoWriter('C:\Users\Mahant Swami\Desktop\Output\Output_1'); % Mihir
-video_writer = VideoWriter('Output/Site4_Normal_Autonomous');
+video_writer = VideoWriter('Output/onelane_autonomus');
 open(video_writer);
+
+location_x = [];
+location_y = [];
 
 %timeStamp = 1.5;                   % time from the beginning of the video
 %videoReader.CurrentTime = timeStamp;   % point to the chosen frame
@@ -160,7 +192,7 @@ while hasFrame(videoReader)
     detector = vehicleDetectorACF();
 
     % Width of a common vehicle is between 1.5 to 2.5 meters
-    vehicleWidth = [1.5, 2.5];
+    vehicleWidth = [0.7, 2.5];
 
 
     monoDetector = configureDetectorMonoCamera(detector, sensor, vehicleWidth);
@@ -169,6 +201,14 @@ while hasFrame(videoReader)
 
 
     locations = computeVehicleLocations(bboxes, sensor);
+    
+    if isempty(locations)
+        location_x = [location_x NaN];
+        location_y = [location_y NaN];
+    else
+        location_x = [location_x locations(1,1)];
+        location_y = [location_y locations(1,2)];
+    end
 
     % Overlay the detections on the video frame
     imgOut = insertVehicleDetections(frame, locations, bboxes);
@@ -180,6 +220,19 @@ while hasFrame(videoReader)
 end
 
 close(video_writer)
+
+location_total = transpose([location_x ;location_y]);
+%location_total = transpose([location_x ;location_y;location_x_2 ;location_y_2]);
+
+writematrix(location_total,'Output/output_location_autonomous.csv');
+
+figure(1)
+plot(location_x,location_y)
+xlim([-10 10])
+
+figure(3)
+scatter(location_x,location_y,'r')
+xlim([-10 10])
 
 %%% FUNCTIONS
 function I = takeSnapshot(frame, sensor, sensorOut)

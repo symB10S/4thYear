@@ -1,7 +1,12 @@
 %Autonomous Driving Toolbox 
 %Visual Perception Using Monocular Camera
 
-% Mihir
+% Blender 1
+% focalLength    = [2008.8053, 2008.8053]; % [fx, fy] in pixel units
+% principalPoint = [960, 540];             % [cx, cy] optical center in pixel coordinates
+% imageSize      = [1080, 1920];           % [nrows, mcols]
+
+% Blender 2
 % focalLength    = [2008.8053, 2008.8053]; % [fx, fy] in pixel units
 % principalPoint = [960, 540];             % [cx, cy] optical center in pixel coordinates
 % imageSize      = [1080, 1920];           % [nrows, mcols]
@@ -30,12 +35,21 @@ sensor = monoCamera(camIntrinsics, height, 'Pitch', pitch);
 % videoName = 'C:\Users\Mahant Swami\Desktop\Autonomous\test.mkv'; % Mihir
 % videoName = "OneVehicle/Rendered Animation/Site4_SwitchingLanes.m4v";
 % videoName = "OneVehicle/Rendered Animation/Site3_Normal_Short.mp4";
+% videoName = "OneVehicle/Rendered Animation/Site4_Normal.mp4";
+% videoName = "OneVehicle/Rendered Animation/onevehiclerender.mp4";
+
+% videoName = "OneVehicle/Rendered Animation/Dodge.mp4";
+% videoName = "OneVehicle/Rendered Animation/racecar.mp4";
+videoName = "OneVehicle/Rendered Animation/Bugatti.mp4";
+
 videoReader = VideoReader(videoName);
 
 % video_writer = VideoWriter('C:\Users\Mahant Swami\Desktop\Output\Output_1'); % Mihir
-video_writer = VideoWriter('Output/Autonomous_Output');
+video_writer = VideoWriter('Output/Big_Background');
 open(video_writer);
 
+location_x = [];
+location_y = [];
 
 %timeStamp = 1.5;                   % time from the beginning of the video
 %videoReader.CurrentTime = timeStamp;   % point to the chosen frame
@@ -159,7 +173,7 @@ while hasFrame(videoReader)
     detector = vehicleDetectorACF();
 
     % Width of a common vehicle is between 1.5 to 2.5 meters
-    vehicleWidth = [1.5, 2.5];
+    vehicleWidth = [0.7, 2.5];
 
 
     monoDetector = configureDetectorMonoCamera(detector, sensor, vehicleWidth);
@@ -168,17 +182,34 @@ while hasFrame(videoReader)
 
 
     locations = computeVehicleLocations(bboxes, sensor);
+    
+    if isempty(locations)
+        location_x = [location_x NaN];
+        location_y = [location_y NaN];
+    else
+        location_x = [location_x locations(1,1)];
+        location_y = [location_y locations(1,2)];
+    end
 
     % Overlay the detections on the video frame
     imgOut = insertVehicleDetections(frame, locations, bboxes);
     %figure;
-    imshow(imgOut);
+%     imshow(imgOut);
     
     writeVideo(video_writer,imgOut);
     counter = counter + 1
 end
 
 close(video_writer)
+
+location_total = transpose([location_x ;location_y]);
+%location_total = transpose([location_x ;location_y;location_x_2 ;location_y_2]);
+
+writematrix(location_total,'Output/output_location_autonomous.csv');
+
+figure(1)
+plot(location_x,location_y)
+xlim([-10 10])
 
 %%% FUNCTIONS
 function I = takeSnapshot(frame, sensor, sensorOut)

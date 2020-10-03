@@ -125,11 +125,11 @@ axis([0 image_width 0 image_height])
 
 % === INVERSE CAMERA MATRIX === %
 
-% p_in = out(:,2)/out(3,2);
-% 
-% rates = K_inv*p_in;
-% parameter = -H/rates(2);
-% p_out = rates*parameter
+p_in = out(:,2)/out(3,2);
+
+rates = K_inv*p_in;
+parameter = -H/rates(2);
+p_out = rates*parameter
 
 % Generate Perspective for lower than Horizon
 blank_image = zeros(image_height,image_width,3,'uint8');
@@ -138,47 +138,17 @@ blank_image_y= [];
 blank_image_z= [];
 blank_image_abs= [];
 
-P_hill = [0;-H;70];
-
-p_hill = K*P_hill;
-p_hill = floor(p_hill./p_hill(3))
-
-
-
-for i = 1:p_hill(2)
+for i = 1:image_height/2-100
     for j = 1:image_width
-        
         p_in = [j;i;1];
         p_plane = [0;-H;0];
         
-%         normal = [0;1/2;-1/2];
-        normal = [0;1;0];
+        normal = [0;1/2;-1/2];
+%         normal = [0;1;0];
         
 %         rates = K_inv*p_in;
 %         parameter = -H/rates(2);
 %         p_out = rates*parameter;
-
-        line_vector = K_inv*p_in;
-        parameter = dot(p_plane,normal)/(dot(line_vector,normal));
-        p_out = line_vector*parameter;
-        
-        blank_image_x(i,j) = p_out(1) ;
-        blank_image_y(i,j) = p_out(2) ;
-        blank_image_z(i,j) = p_out(3) ;
-        
-        blank_image_abs(i,j)= sqrt(p_out(1)*p_out(1)+p_out(2)*p_out(2)+p_out(3)*p_out(3));
-        %image(round(p_out(1)),round(p_out(3)),:) = image_flipped(i,j,:);
-    end
-end
-for i = p_hill(2):image_height
-    for j = 1:image_width
-        
-        p_in = [j;i;1];
-        p_plane = P_hill;
-        
-        normal = [0;1;-1];
-%         normal = [0;1;0];
-
 
         line_vector = K_inv*p_in;
         parameter = dot(p_plane,normal)/(dot(line_vector,normal));
